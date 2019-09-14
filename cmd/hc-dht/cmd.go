@@ -9,24 +9,22 @@ import (
 	"github.com/brutella/hc"
 	"github.com/brutella/hc/accessory"
 	hcLog "github.com/brutella/hc/log"
-	"github.com/duncanleo/hc-http-fan/config"
 )
 
 func main() {
 	hcLog.Debug.Enable()
 
-	cfg, err := config.GetConfig()
-	if err != nil {
-		log.Panic(err)
-	}
-
 	var name = flag.String("name", "DHT22", "name of the sensor to display in HomeKit")
+	var manufacturer = flag.String("manufacturer", "Aosong Electronics", "manufacturer of the sensor")
+	var model = flag.String("model", "DHT22", "model number of the sensor")
+	var serial = flag.String("serial", "0000", "serial number of the sensor")
+	var pin = flag.String("pin", "00102003", "PIN number to pair the HomeKit accessory")
 
 	info := accessory.Info{
-		Name: *name,
-		// Manufacturer: cfg.Manufacturer,
-		// Model:        cfg.Model,
-		// SerialNumber: cfg.Serial,
+		Name:         *name,
+		Manufacturer: *manufacturer,
+		Model:        *model,
+		SerialNumber: *serial,
 	}
 
 	ac := accessory.New(info, accessory.TypeSensor)
@@ -46,7 +44,7 @@ func main() {
 	ac.AddService(humiditySensor.Service)
 
 	hcConfig := hc.Config{
-		Pin:         cfg.Pin,
+		Pin:         *pin,
 		StoragePath: "storage",
 	}
 
