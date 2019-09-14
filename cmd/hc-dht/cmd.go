@@ -29,17 +29,21 @@ func main() {
 		// SerialNumber: cfg.Serial,
 	}
 
-	ac := accessory.New(info, accessory.TypeThermostat)
+	ac := accessory.New(info, accessory.TypeSensor)
 
 	tempSensor := service.NewTemperatureSensor()
 	tempSensor.CurrentTemperature.OnValueGet(func() interface{} {
 		return 99
 	})
-	tempSensor.CurrentTemperature.OnValueRemoteUpdate(func(v float64) {
-		log.Println(v)
-	})
 
 	ac.AddService(tempSensor.Service)
+
+	humiditySensor := service.NewHumiditySensor()
+	humiditySensor.CurrentRelativeHumidity.OnValueGet(func() interface{} {
+		return 2
+	})
+
+	ac.AddService(humiditySensor.Service)
 
 	hcConfig := hc.Config{
 		Pin:         cfg.Pin,
