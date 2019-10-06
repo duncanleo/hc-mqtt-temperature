@@ -24,6 +24,8 @@ func main() {
 	var useFahrenheit = flag.Bool("f", false, "add this flag to use Fahrenheit")
 	var fetchIntervalSec = flag.Int("fetchInterval", 20, "time interval in seconds to fetch data")
 
+	flag.Parse()
+
 	info := accessory.Info{
 		Name:         *name,
 		Manufacturer: *manufacturer,
