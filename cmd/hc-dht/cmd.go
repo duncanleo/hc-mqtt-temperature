@@ -22,6 +22,7 @@ func main() {
 	var gpioPin = flag.Int("gpioPin", 4, "GPIO pin of the DHT22")
 	var storagePath = flag.String("storagePath", "hc-dht-data", "path to store data")
 	var useFahrenheit = flag.Bool("f", false, "add this flag to use Fahrenheit")
+	var fetchIntervalSec = flag.Int("fetchInterval", 20, "time interval in seconds to fetch data")
 
 	info := accessory.Info{
 		Name:         *name,
@@ -52,7 +53,7 @@ func main() {
 	var humidity float64
 	var temperature float64
 
-	go dhtSensor.ReadBackground(&humidity, &temperature, 20*time.Second, dhtStop, dhtStopped)
+	go dhtSensor.ReadBackground(&humidity, &temperature, time.Duration(*fetchIntervalSec)*time.Second, dhtStop, dhtStopped)
 
 	ac := accessory.New(info, accessory.TypeSensor)
 
