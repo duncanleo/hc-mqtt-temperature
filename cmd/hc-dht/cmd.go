@@ -21,6 +21,7 @@ func main() {
 	var pin = flag.String("pin", "00102003", "PIN number to pair the HomeKit accessory")
 	var gpioPin = flag.Int("gpioPin", 4, "GPIO pin of the DHT22")
 	var storagePath = flag.String("storagePath", "hc-dht-data", "path to store data")
+	var useFahrenheit = flag.Bool("f", false, "add this flag to use Fahrenheit")
 
 	info := accessory.Info{
 		Name:         *name,
@@ -29,13 +30,18 @@ func main() {
 		SerialNumber: *serial,
 	}
 
+	var tempUnit = dht.Celsius
+	if *useFahrenheit {
+		tempUnit = dht.Fahrenheit
+	}
+
 	// DHT Setup
 	err := dht.HostInit()
 	if err != nil {
 		log.Panic("HostInit error: ", err)
 		return
 	}
-	dhtSensor, err := dht.NewDHT(fmt.Sprintf("GPIO%d", *gpioPin), dht.Celsius, "")
+	dhtSensor, err := dht.NewDHT(fmt.Sprintf("GPIO%d", *gpioPin), tempUnit, "")
 	if err != nil {
 		log.Panic("DHT init error: ", err)
 		return
