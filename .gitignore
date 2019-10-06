@@ -26,4 +26,6 @@ config.json
 
 # End of https://www.gitignore.io/api/go
 
-storage/
+hc-dht
+hc-dht-storage/
+.DS_Store
