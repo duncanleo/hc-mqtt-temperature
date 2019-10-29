@@ -26,6 +26,6 @@ config.json
 
 # End of https://www.gitignore.io/api/go
 
-hc-dht
-hc-dht-storage/
+hc-http-temperature
+hc-http-temperature-data
 .DS_Store
