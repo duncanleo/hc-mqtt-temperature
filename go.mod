@@ -1,4 +1,4 @@
-module github.com/duncanleo/hc-temp-sensor
+module github.com/duncanleo/hc-http-temperature
 
 go 1.12
 

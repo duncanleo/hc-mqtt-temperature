@@ -26,13 +26,13 @@ func makeHTTPRequest(url string) ([]byte, error) {
 }
 
 func main() {
-	var name = flag.String("name", "hc-temp-sensor", "name of the sensor to display in HomeKit")
+	var name = flag.String("name", "hc-http-temperature", "name of the sensor to display in HomeKit")
 	var manufacturer = flag.String("manufacturer", "Aosong Electronics", "manufacturer of the sensor")
 	var model = flag.String("model", "DHT22", "model number of the sensor")
 	var serial = flag.String("serial", "0000", "serial number of the sensor")
 	var pin = flag.String("pin", "00102003", "PIN number to pair the HomeKit accessory")
 	var port = flag.String("port", "50004", "Port number for the HomeKit accessory")
-	var storagePath = flag.String("storagePath", "hc-temp-sensor-data", "path to store data")
+	var storagePath = flag.String("storagePath", "hc-http-temperature-data", "path to store data")
 
 	var url = flag.String("url", "", "URL to fetch temperature")
 	var isHumidityEnabled = flag.Bool("humidity", false, "whether to enable humidity")
