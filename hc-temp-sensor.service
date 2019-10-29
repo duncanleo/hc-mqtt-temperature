@@ -1,11 +1,11 @@
 [Unit]
-Description=DHT22 HomeKit service
+Description=Temperature HomeKit service
 Wants=network.target
 After=network.target
 
 [Service]
 Type=simple
-ExecStart=/usr/local/bin/hc-dht -storagePath=/var/lib/hc-dht
+ExecStart=/usr/local/bin/hc-temp-sensor -storagePath=/var/lib/hc-temp-sensor
 Restart=always
 RestartSec=3
 User=hc-dht
