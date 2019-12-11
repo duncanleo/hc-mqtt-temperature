@@ -69,9 +69,9 @@ func main() {
 	var fetchTemperature = func() interface{} {
 		tempStatusActive.SetValue(true)
 		data, err := makeHTTPRequest(*url)
-		tempStatusActive.SetValue(false)
 		if err != nil {
 			log.Println(err)
+			tempStatusActive.SetValue(false)
 			tempStatusFault.SetValue(characteristic.StatusFaultGeneralFault)
 			return nil
 		}
@@ -110,9 +110,9 @@ func main() {
 		var fetchHumidity = func() interface{} {
 			humidityStatusActive.SetValue(true)
 			data, err := makeHTTPRequest(*url)
-			humidityStatusActive.SetValue(false)
 			if err != nil {
 				log.Println(err)
+				humidityStatusActive.SetValue(false)
 				humidityStatusFault.SetValue(characteristic.StatusFaultGeneralFault)
 				return nil
 			}
