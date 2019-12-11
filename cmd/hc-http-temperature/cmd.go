@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/brutella/hc/characteristic"
 	"github.com/brutella/hc/service"
@@ -39,7 +40,14 @@ func main() {
 	var tempJSONPath = flag.String("tempJSONPath", ".temperature", "JSON path to the temperature value")
 	var humJSONPath = flag.String("humJSONPath", ".humidity", "JSON path to the humidity value")
 
+	var fetchInterval = flag.Int("fetchInterval", 10, "time interval in seconds to fetch, default 2s")
+
 	flag.Parse()
+
+	var tempIntervalTicker = time.NewTicker(time.Second * time.Duration(*fetchInterval))
+	var tempIntervalTimerChan = make(chan bool)
+	var humIntervalTicker = time.NewTicker(time.Second * time.Duration(*fetchInterval))
+	var humIntervalTimerChan = make(chan bool)
 
 	info := accessory.Info{
 		Name:         *name,
@@ -58,8 +66,7 @@ func main() {
 	tempStatusFault := characteristic.NewStatusFault()
 	tempSensor.AddCharacteristic(tempStatusFault.Characteristic)
 
-	tempSensor.CurrentTemperature.OnValueGet(func() interface{} {
-		log.Println("tempSensor.CurrentTemperature.OnValueGet")
+	var fetchTemperature = func() interface{} {
 		tempStatusActive.SetValue(true)
 		data, err := makeHTTPRequest(*url)
 		tempStatusActive.SetValue(false)
@@ -70,7 +77,24 @@ func main() {
 		}
 		tempStatusFault.SetValue(characteristic.StatusFaultNoFault)
 		return gjson.Get(string(data), *tempJSONPath).Float()
+	}
+
+	tempSensor.CurrentTemperature.OnValueGet(func() interface{} {
+		log.Println("tempSensor.CurrentTemperature.OnValueGet")
+		return fetchTemperature()
 	})
+
+	go func() {
+		for {
+			select {
+			case <-tempIntervalTimerChan:
+				return
+			case <-tempIntervalTicker.C:
+				tempSensor.CurrentTemperature.UpdateValue(fetchTemperature())
+				break
+			}
+		}
+	}()
 
 	ac.AddService(tempSensor.Service)
 
@@ -83,8 +107,7 @@ func main() {
 		humidityStatusActive := characteristic.NewStatusActive()
 		humiditySensor.AddCharacteristic(humidityStatusActive.Characteristic)
 
-		humiditySensor.CurrentRelativeHumidity.OnValueGet(func() interface{} {
-			log.Println("humiditySensor.CurrentRelativeHumidity.OnValueGet")
+		var fetchHumidity = func() interface{} {
 			humidityStatusActive.SetValue(true)
 			data, err := makeHTTPRequest(*url)
 			humidityStatusActive.SetValue(false)
@@ -95,7 +118,24 @@ func main() {
 			}
 			humidityStatusFault.SetValue(characteristic.StatusFaultNoFault)
 			return gjson.Get(string(data), *humJSONPath).Float()
+		}
+
+		humiditySensor.CurrentRelativeHumidity.OnValueGet(func() interface{} {
+			log.Println("humiditySensor.CurrentRelativeHumidity.OnValueGet")
+			return fetchHumidity()
 		})
+
+		go func() {
+			for {
+				select {
+				case <-humIntervalTimerChan:
+					return
+				case <-humIntervalTicker.C:
+					humiditySensor.CurrentRelativeHumidity.UpdateValue(fetchHumidity())
+					break
+				}
+			}
+		}()
 
 		ac.AddService(humiditySensor.Service)
 	}
@@ -112,6 +152,8 @@ func main() {
 	}
 
 	hc.OnTermination(func() {
+		tempIntervalTimerChan <- true
+		humIntervalTimerChan <- true
 		<-t.Stop()
 	})
 
