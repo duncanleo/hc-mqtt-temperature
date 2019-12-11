@@ -67,15 +67,15 @@ func main() {
 	tempSensor.AddCharacteristic(tempStatusFault.Characteristic)
 
 	var fetchTemperature = func() interface{} {
-		tempStatusActive.SetValue(true)
 		data, err := makeHTTPRequest(*url)
+		tempStatusActive.UpdateValue(true)
 		if err != nil {
 			log.Println(err)
-			tempStatusActive.SetValue(false)
-			tempStatusFault.SetValue(characteristic.StatusFaultGeneralFault)
+			tempStatusActive.UpdateValue(false)
+			tempStatusFault.UpdateValue(characteristic.StatusFaultGeneralFault)
 			return nil
 		}
-		tempStatusFault.SetValue(characteristic.StatusFaultNoFault)
+		tempStatusFault.UpdateValue(characteristic.StatusFaultNoFault)
 		return gjson.Get(string(data), *tempJSONPath).Float()
 	}
 
@@ -108,15 +108,15 @@ func main() {
 		humiditySensor.AddCharacteristic(humidityStatusActive.Characteristic)
 
 		var fetchHumidity = func() interface{} {
-			humidityStatusActive.SetValue(true)
 			data, err := makeHTTPRequest(*url)
+			humidityStatusActive.UpdateValue(true)
 			if err != nil {
 				log.Println(err)
-				humidityStatusActive.SetValue(false)
-				humidityStatusFault.SetValue(characteristic.StatusFaultGeneralFault)
+				humidityStatusActive.UpdateValue(false)
+				humidityStatusFault.UpdateValue(characteristic.StatusFaultGeneralFault)
 				return nil
 			}
-			humidityStatusFault.SetValue(characteristic.StatusFaultNoFault)
+			humidityStatusFault.UpdateValue(characteristic.StatusFaultNoFault)
 			return gjson.Get(string(data), *humJSONPath).Float()
 		}
 
