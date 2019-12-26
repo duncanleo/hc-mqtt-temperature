@@ -1,4 +1,4 @@
-module github.com/duncanleo/hc-http-temperature
+module github.com/duncanleo/hc-mqtt-temperature
 
 go 1.12
 

@@ -1,4 +1,4 @@
-# hc-temp-sensor
+# hc-mqtt-temperature
 This is a CLI tool built with [hc](https://github.com/brutella/hc) that emulates a HomeKit temperature and (optional) humidity accessory.
 
 ### Usage
