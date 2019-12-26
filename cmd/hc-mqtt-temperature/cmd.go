@@ -2,9 +2,9 @@ package main
 
 import (
 	"flag"
-	"io/ioutil"
+	"fmt"
 	"log"
-	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/brutella/hc/characteristic"
@@ -13,41 +13,55 @@ import (
 
 	"github.com/brutella/hc"
 	"github.com/brutella/hc/accessory"
+
+	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
-func makeHTTPRequest(url string) ([]byte, error) {
-	log.Printf("GET '%s'", url)
-	resp, err := http.Get(url)
-	if err != nil {
-		return make([]byte, 0), nil
+var (
+	temp     float64 = 0
+	humidity float64 = 0
+)
+
+func connect(clientID string, uri *url.URL) (mqtt.Client, error) {
+	var opts = mqtt.NewClientOptions()
+	opts.AddBroker(fmt.Sprintf("tcp://%s", uri.Host))
+	opts.SetUsername(uri.User.Username())
+	password, _ := uri.User.Password()
+	opts.SetPassword(password)
+	opts.SetClientID(clientID)
+
+	var client = mqtt.NewClient(opts)
+	var token = client.Connect()
+	for !token.WaitTimeout(3 * time.Second) {
 	}
-	log.Println(resp.Status)
-	defer resp.Body.Close()
-	return ioutil.ReadAll(resp.Body)
+	return client, token.Error()
 }
 
 func main() {
-	var name = flag.String("name", "hc-http-temperature", "name of the sensor to display in HomeKit")
+	var name = flag.String("name", "hc-mqtt-temperature", "name of the sensor to display in HomeKit")
 	var manufacturer = flag.String("manufacturer", "Aosong Electronics", "manufacturer of the sensor")
 	var model = flag.String("model", "DHT22", "model number of the sensor")
 	var serial = flag.String("serial", "0000", "serial number of the sensor")
 	var pin = flag.String("pin", "00102003", "PIN number to pair the HomeKit accessory")
-	var port = flag.String("port", "50004", "Port number for the HomeKit accessory")
-	var storagePath = flag.String("storagePath", "hc-http-temperature-data", "path to store data")
+	var port = flag.String("port", "", "Port number for the HomeKit accessory")
+	var storagePath = flag.String("storagePath", "hc-mqtt-temperature-data", "path to store data")
 
-	var url = flag.String("url", "", "URL to fetch temperature")
+	var brokerURI = flag.String("brokerURI", "127.0.0.1:1883", "URI of the MQTT broker")
+	var clientID = flag.String("clientID", "hc-mqtt-temperature", "client ID for MQTT")
+
+	var topicTemp = flag.String("topicTemp", "temp", "topic for temperature")
+	var topicHum = flag.String("topicHum", "humidity", "topic for humidity")
+
 	var isHumidityEnabled = flag.Bool("humidity", false, "whether to enable humidity")
-	var tempJSONPath = flag.String("tempJSONPath", ".temperature", "JSON path to the temperature value")
-	var humJSONPath = flag.String("humJSONPath", ".humidity", "JSON path to the humidity value")
-
-	var fetchInterval = flag.Int("fetchInterval", 10, "time interval in seconds to fetch, default 2s")
+	var tempJSONPath = flag.String("tempJSONPath", "temperature", "JSON path to the temperature value")
+	var humJSONPath = flag.String("humJSONPath", "humidity", "JSON path to the humidity value")
 
 	flag.Parse()
 
-	var tempIntervalTicker = time.NewTicker(time.Second * time.Duration(*fetchInterval))
-	var tempIntervalTimerChan = make(chan bool)
-	var humIntervalTicker = time.NewTicker(time.Second * time.Duration(*fetchInterval))
-	var humIntervalTimerChan = make(chan bool)
+	mqttURI, err := url.Parse(*brokerURI)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	info := accessory.Info{
 		Name:         *name,
@@ -61,42 +75,26 @@ func main() {
 	tempSensor := service.NewTemperatureSensor()
 
 	tempStatusActive := characteristic.NewStatusActive()
+	tempStatusActive.SetValue(false)
 	tempSensor.AddCharacteristic(tempStatusActive.Characteristic)
 
 	tempStatusFault := characteristic.NewStatusFault()
+	tempStatusFault.SetValue(characteristic.StatusFaultGeneralFault)
 	tempSensor.AddCharacteristic(tempStatusFault.Characteristic)
-
-	var fetchTemperature = func() interface{} {
-		data, err := makeHTTPRequest(*url)
-		tempStatusActive.UpdateValue(true)
-		if err != nil {
-			log.Println(err)
-			tempStatusActive.UpdateValue(false)
-			tempStatusFault.UpdateValue(characteristic.StatusFaultGeneralFault)
-			return nil
-		}
-		tempStatusFault.UpdateValue(characteristic.StatusFaultNoFault)
-		return gjson.Get(string(data), *tempJSONPath).Float()
-	}
 
 	tempSensor.CurrentTemperature.OnValueGet(func() interface{} {
 		log.Println("tempSensor.CurrentTemperature.OnValueGet")
-		return fetchTemperature()
+		return temp
 	})
 
-	go func() {
-		for {
-			select {
-			case <-tempIntervalTimerChan:
-				return
-			case <-tempIntervalTicker.C:
-				tempSensor.CurrentTemperature.UpdateValue(fetchTemperature())
-				break
-			}
-		}
-	}()
-
 	ac.AddService(tempSensor.Service)
+
+	client, err := connect(*clientID, mqttURI)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var updateHumidity mqtt.MessageHandler
 
 	if *isHumidityEnabled {
 		humiditySensor := service.NewHumiditySensor()
@@ -107,38 +105,35 @@ func main() {
 		humidityStatusActive := characteristic.NewStatusActive()
 		humiditySensor.AddCharacteristic(humidityStatusActive.Characteristic)
 
-		var fetchHumidity = func() interface{} {
-			data, err := makeHTTPRequest(*url)
-			humidityStatusActive.UpdateValue(true)
-			if err != nil {
-				log.Println(err)
-				humidityStatusActive.UpdateValue(false)
-				humidityStatusFault.UpdateValue(characteristic.StatusFaultGeneralFault)
-				return nil
-			}
-			humidityStatusFault.UpdateValue(characteristic.StatusFaultNoFault)
-			return gjson.Get(string(data), *humJSONPath).Float()
-		}
-
 		humiditySensor.CurrentRelativeHumidity.OnValueGet(func() interface{} {
 			log.Println("humiditySensor.CurrentRelativeHumidity.OnValueGet")
-			return fetchHumidity()
+			return humidity
 		})
 
-		go func() {
-			for {
-				select {
-				case <-humIntervalTimerChan:
-					return
-				case <-humIntervalTicker.C:
-					humiditySensor.CurrentRelativeHumidity.UpdateValue(fetchHumidity())
-					break
-				}
-			}
-		}()
-
 		ac.AddService(humiditySensor.Service)
+
+		updateHumidity = func(client mqtt.Client, msg mqtt.Message) {
+			log.Printf("[%s]: %s\n", *topicHum, string(msg.Payload()))
+			humidity = gjson.Get(string(msg.Payload()), *humJSONPath).Float()
+			humiditySensor.CurrentRelativeHumidity.UpdateValue(humidity)
+
+			humidityStatusActive.UpdateValue(true)
+			humidityStatusFault.UpdateValue(characteristic.StatusFaultNoFault)
+		}
 	}
+
+	client.Subscribe(*topicTemp, 0, func(client mqtt.Client, msg mqtt.Message) {
+		log.Printf("[%s]: %s\n", *topicTemp, string(msg.Payload()))
+		temp = gjson.Get(string(msg.Payload()), *tempJSONPath).Float()
+		log.Println(temp)
+		tempSensor.CurrentTemperature.UpdateValue(temp)
+		tempStatusActive.UpdateValue(true)
+		tempStatusFault.UpdateValue(characteristic.StatusFaultNoFault)
+
+		if *isHumidityEnabled {
+			updateHumidity(client, msg)
+		}
+	})
 
 	hcConfig := hc.Config{
 		Pin:         *pin,
@@ -152,8 +147,6 @@ func main() {
 	}
 
 	hc.OnTermination(func() {
-		tempIntervalTimerChan <- true
-		humIntervalTimerChan <- true
 		<-t.Stop()
 	})
 
