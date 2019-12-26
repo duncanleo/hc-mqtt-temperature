@@ -5,7 +5,7 @@ This is a CLI tool built with [hc](https://github.com/brutella/hc) that emulates
 ```shell
 Usage of hc-mqtt-temperature:
   -brokerURI string
-    	URI of the MQTT broker (default "127.0.0.1:1883")
+    	URI of the MQTT broker (default "mqtt://127.0.0.1:1883")
   -clientID string
     	client ID for MQTT (default "hc-mqtt-temperature")
   -humJSONPath string

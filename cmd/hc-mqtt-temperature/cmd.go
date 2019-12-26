@@ -46,7 +46,7 @@ func main() {
 	var port = flag.String("port", "", "Port number for the HomeKit accessory")
 	var storagePath = flag.String("storagePath", "hc-mqtt-temperature-data", "path to store data")
 
-	var brokerURI = flag.String("brokerURI", "127.0.0.1:1883", "URI of the MQTT broker")
+	var brokerURI = flag.String("brokerURI", "mqtt://127.0.0.1:1883", "URI of the MQTT broker")
 	var clientID = flag.String("clientID", "hc-mqtt-temperature", "client ID for MQTT")
 
 	var topicTemp = flag.String("topicTemp", "temp", "topic for temperature")
