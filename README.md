@@ -3,9 +3,13 @@ This is a CLI tool built with [hc](https://github.com/brutella/hc) that emulates
 
 ### Usage
 ```shell
-Usage of hc-http-temperature
+Usage of hc-mqtt-temperature:
+  -brokerURI string
+    	URI of the MQTT broker (default "127.0.0.1:1883")
+  -clientID string
+    	client ID for MQTT (default "hc-mqtt-temperature")
   -humJSONPath string
-    	JSON path to the humidity value (default ".humidity")
+    	JSON path to the humidity value (default "humidity")
   -humidity
     	whether to enable humidity
   -manufacturer string
@@ -13,19 +17,21 @@ Usage of hc-http-temperature
   -model string
     	model number of the sensor (default "DHT22")
   -name string
-    	name of the sensor to display in HomeKit (default "hc-http-temperature")
+    	name of the sensor to display in HomeKit (default "hc-mqtt-temperature")
   -pin string
     	PIN number to pair the HomeKit accessory (default "00102003")
   -port string
-    	Port number for the HomeKit accessory (default "50004")
+    	Port number for the HomeKit accessory
   -serial string
     	serial number of the sensor (default "0000")
   -storagePath string
-    	path to store data (default "hc-http-temperature-data")
+    	path to store data (default "hc-mqtt-temperature-data")
   -tempJSONPath string
-    	JSON path to the temperature value (default ".temperature")
-  -url string
-    	URL to fetch temperature
+    	JSON path to the temperature value (default "temperature")
+  -topicHum string
+    	topic for humidity (default "humidity")
+  -topicTemp string
+    	topic for temperature (default "temp")
 ```
 
 ### JSON Path
