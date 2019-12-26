@@ -4,7 +4,7 @@ go 1.12
 
 require (
 	github.com/brutella/hc v1.2.0
-	github.com/eclipse/paho.mqtt.golang v1.2.0 // indirect
+	github.com/eclipse/paho.mqtt.golang v1.2.0
 	github.com/gorilla/websocket v1.4.1 // indirect
 	github.com/miekg/dns v1.1.17 // indirect
 	github.com/stretchr/testify v1.4.0 // indirect
