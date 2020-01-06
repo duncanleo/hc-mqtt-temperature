@@ -29,6 +29,7 @@ func connect(clientID string, uri *url.URL) (mqtt.Client, error) {
 	password, _ := uri.User.Password()
 	opts.SetPassword(password)
 	opts.SetClientID(clientID)
+	opts.CleanSession = false
 
 	var client = mqtt.NewClient(opts)
 	var token = client.Connect()
